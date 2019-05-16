@@ -1,23 +1,187 @@
-# Compiled class file
-*.class
+package project;
 
-# Log file
-*.log
+import static java.lang.Math.random;
+import java.util.ArrayList;
+import java.util.Random;
 
-# BlueJ files
-*.ctxt
+public class Project {
+    
+   public static void main(String[] args) {
+    
+       Random random = new Random();
+       int score[] = new int[10];
+       int scoreFather = 0;
+       int scoreSon = 0;
+       int value[] = {(10*3 + 10*4 + 5*2)/3,(8*3 + 10*4 + 6*2)/3, (6*3 + 4*4 + 8*2)/3, (5*3 + 9*4 + 1*2)/3, (7*3 + 7*4 + 5*2)/3, (8*3 + 6*4 + 2*2)/3, (6*3 + 6*4 + 4*2)/3, (9*3 + 8*4 + 3*2)/3, (6*3 + 7*4 + 5*2)/3, (10*3 + 10*4 + 7*2)/10};
+       int cost[] = {60, 40, 40, 30, 20, 20, 25, 70, 50, 20};
+       int risk[] = {3, 6, 2, 6, 4, 8, 9, 7, 6, 6};
+       int check = 0;
+       Requirements r = new Requirements();
+       Score s = new Score();
+       PopulationIni solution = new PopulationIni();
+       //Cria a população inicial
+       solution.population();
+       //Repara a soluçao
+       for (int i = 0; i < solution.population_size; i++) {
+            for (int j = 0; j < solution.chromosome_size; j++) {
+                if(solution.population[i][j] != 0){
+                    check +=cost[j];
+                    if(check > solution.release[0]){
+                        solution.population[i][j] = 0;
+                        j = 0;
+                        check = 0;
+                    }
+                }
+            }
+            check = 0;
+        }
+              
+       for (int i = 0; i < solution.population_size; i++){
+            for (int j = 0; j < solution.chromosome_size; j++){
+                score[i] = score[i] + ((value[j] * cost[j])*(solution.release.length - solution.population[i][j] + 1) - risk[j] * j);
+            }
+        }
+       for (int i = 0; i < solution.max_generation; i++) {
+           for (int j = 0; j < solution.tournament_size; j++) {
+               if(solution.tax() < solution.crossover_rate ){
+                   int father1 = solution.indexfather();
+                   int father2;
+                   do{
+                       father2 = solution.indexfather();
+                   }while(father1 == father2);
+                   solution.crossover(father1, father2);
+                   if(solution.tax() < solution.mutation_rate){
+                       solution.mutation();
+                       for (int k = 0; k < solution.chromosome_size; k++) {
+                           if(solution.son.get(k) != 0){
+                               solution.check+=cost[k];
+                               if(check > solution.release[0]){
+                                   solution.population[i][j] = 0;
+                                   solution.check = 0;
+                                   k = 0;
+                               }
+                           }
+                       }
+                   }else{
+                       for (int k = 0; k < solution.chromosome_size; k++) {
+                           if(solution.son.get(k) != 0){
+                               solution.check+=cost[k];
+                               if(check > solution.release[0]){
+                                   solution.population[i][j] = 0;
+                                   solution.check = 0;
+                                   k = 0;
+                               }
+                           }
+                       }
+                   }
+   
+                   for (int k = 0; k < solution.chromosome_size; k++){
+                        scoreFather = scoreFather + ((value[k] * cost[k])*(solution.release.length - solution.son.get(k) + 1) - risk[k] * k);
+                    }
+                   for (int k = 0; k < solution.chromosome_size; k++){
+                        scoreSon = scoreSon + ((value[k] * cost[k])*(solution.release.length - solution.population[father1][k] + 1) - risk[k] * k);
+                    }
+                   
+                   if(scoreSon > scoreFather){
+                       for (int k = 0; k < 10; k++) {
+                           solution.population[father1][k] = solution.son.get(k);
+                       }
+                   }
+               }
+               for (int k = 0; k < solution.population_size; k++) {
+                   for (int l = 0; l < solution.chromosome_size; l++) {
+                       solution.score[k] = score[k] + ((value[l] * cost[l])*(solution.release.length - solution.population[k][l] + 1) - risk[l] * l);
+                   }
+                   if(solution.best < solution.score[k]){
+                       solution.best = solution.score[k];
+                       solution.index = k;
+                   }
+               }               
+           }   
+       }
+       System.out.print("The best chromosome: [");
+       for (int k = 0; k < solution.chromosome_size; k++) {
+                   System.out.print(" "+solution.population[solution.index][k]);
+               }
+               System.out.println(" ] your score is "+ solution.best);
+   }
+}
+----------------------------------------------------------------------------------------------------------------------------------------
+package project;
 
-# Mobile Tools for Java (J2ME)
-.mtj.tmp/
+import static java.lang.Math.random;
+import java.util.ArrayList;
+import java.util.Random;
 
-# Package Files #
-*.jar
-*.war
-*.nar
-*.ear
-*.zip
-*.tar.gz
-*.rar
+class PopulationIni {
+    
+    Random random = new Random();
+    public float crossover_rate = 0.6f;
+    public float mutation_rate = 0.05f;
+    private int point;
+    public int best = 0;
+    public int index = 0;
+    ArrayList<Integer> son = new ArrayList<Integer>();
+    public int tournament_size = 20;
+    public int max_generation = 100;
+    public int population_size = 10;
+    public int chromosome_size = 10;
+    public int check = 0;
+    public int aux[];
+    public int score[] = new int[10];
+    public int release[] = {125, 125, 125};
+    public int population[][] = new int[10][10];
+    
+    public void population(){
+        
+        for(int i = 0; i < population_size; i++){
+           int gene[] = new int [chromosome_size];
+           for(int j = 0; j < gene.length; j++){
+               gene[j] = random.nextInt(4);
+               population[i][j] = gene[j];
+           }
+       }
+    }
+    
+    public void Repair(){
+        
+    }
+    
+    public void crossover(int index1, int index2){
+        int point = random.nextInt(chromosome_size);
+        int i;
+        for (i = 0; i < point; i++) {
+            son.add(i, population[index1][i]); 
+        }
+        for (i = point; i < chromosome_size; i++) {
+            son.add(i, population[index2][i]);  
+        }   
+    }
+    
+    public double tax(){
+        double crossover = random()/(random()+1);
+        return crossover;
+    }
+    
+    public int indexfather(){
+        int index = random.nextInt(population_size);
+        return index;
+    }
+    
+    public void mutation(){
+        for (int j = 0; j < chromosome_size; j++) {
+            if(random.nextFloat() < mutation_rate){
+                int num = random.nextInt(4);
+                if(num == son.get(j)){
+                    while(num == son.get(j)){
+                        num = random.nextInt(release.length + 1);
+                    }
+                    son.add(j, num);
+                }else{
+                    son.add(j, num);
+                }
+            }
+        }
+    }    
+}
 
-# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
-hs_err_pid*
